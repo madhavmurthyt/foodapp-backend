@@ -10,8 +10,11 @@ public enum GenericErrorCode implements ErrorCode {
      * <b>Cause:</b> This error could have occurred due to undetermined runtime errors.<br>
      * <b>Action: None</b><br>
      */
-    GEN_001("GEN-001", "An unexpected error occurred. Please contact System Administrator");
-
+    GEN_001("GEN-001", "An unexpected error occurred. Please contact System Administrator"),
+    ATH_004("ATH-003", "Prefix 'Basic ' missing on Authentication Token"),
+    ATHR_005("ATHR-005", "Prefix 'Bearer ' missing on Access/Authorization token"),
+    CPF_001("CPF-001", "No coupon by this name"),
+    CPF_002("CPF-002", "Coupon name field should not be empty");
     private static final Map<String, GenericErrorCode> LOOKUP = new HashMap<String, GenericErrorCode>();
 
     static {
