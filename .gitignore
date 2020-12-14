@@ -2,7 +2,8 @@
 *.class
 
 .idea/
-
+localhost.properties
+application.yaml
 
 # Log file
 *.log
