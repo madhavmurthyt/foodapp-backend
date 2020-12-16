@@ -4,67 +4,84 @@ import com.upgrad.FoodOrderingApp.api.model.CategoriesListResponse;
 import com.upgrad.FoodOrderingApp.api.model.CategoryDetailsResponse;
 import com.upgrad.FoodOrderingApp.api.model.CategoryListResponse;
 import com.upgrad.FoodOrderingApp.api.model.ItemList;
-import com.upgrad.FoodOrderingApp.service.business.CategoryBusinessService;
+import com.upgrad.FoodOrderingApp.service.business.CategoryService;
 import com.upgrad.FoodOrderingApp.service.entity.CategoryEntity;
-import com.upgrad.FoodOrderingApp.service.entity.CategoryItemEntity;
-import com.upgrad.FoodOrderingApp.service.entity.ItemEntity;
 import com.upgrad.FoodOrderingApp.service.exception.CategoryNotFoundException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/")
-@CrossOrigin
 public class CategoryController {
+
     @Autowired
-    CategoryBusinessService categoryBusinessService;
+    private CategoryService categoryService;
 
-    @RequestMapping(method = RequestMethod.GET, path = "/category", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<CategoriesListResponse> getAllCategories(){
-        List<CategoryEntity> categories = categoryBusinessService.getAllCategories();
-        CategoriesListResponse allCategories = new CategoriesListResponse();
+    /**
+     * Method takes categoryId from customer, returns category from database
+     *
+     * @param categoryId category id as request path var
+     * @return ResponseEntity with Category details
+     * @throws CategoryNotFoundException on invalid category id
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.GET, path = "/category/{category_id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CategoryDetailsResponse> getCategoryById(
+        @PathVariable("category_id") final String categoryId) throws CategoryNotFoundException {
 
-        for(CategoryEntity c : categories) {
-            CategoryListResponse singleCategory = new CategoryListResponse();
-            singleCategory.categoryName(c.getCategory_name()).id(UUID.fromString(c.getUuid()));
-            allCategories.addCategoriesItem(singleCategory);
+        // Retrieve category from database
+        CategoryEntity categoryEntity = categoryService.getCategoryById(categoryId);
 
-        }
-        return new ResponseEntity<CategoriesListResponse>(allCategories, HttpStatus.OK);
+        ArrayList<ItemList> itemList = new ArrayList<>();
+
+        // Map retrieved item Entity to Item Object List
+        categoryEntity.getItems().forEach(items ->
+            itemList.add(
+                new ItemList()
+                    .id(UUID.fromString(items.getUuid()))
+                    .itemName(items.getItemName())
+                    .itemType(ItemList.ItemTypeEnum.fromValue(items.getType().getValue()))
+                    .price(items.getPrice())
+            ));
+
+        // Map retrieved Category Entity to Response Object List
+        CategoryDetailsResponse categoryDetailsResponse = new CategoryDetailsResponse()
+            .categoryName(categoryEntity.getCategoryName())
+            .id(UUID.fromString(categoryEntity.getUuid()))
+            .itemList(itemList);
+
+        return new ResponseEntity<CategoryDetailsResponse>(categoryDetailsResponse, HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.GET, path = "/category/{categoryId}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<CategoryDetailsResponse> getCategory( @PathVariable("categoryId") final String categoryId ) throws CategoryNotFoundException {
-        List<CategoryItemEntity> categoryItemList = categoryBusinessService.getCategoryItemList(categoryId);
-        List<ItemList> itemsList = new ArrayList<>();
-        for(CategoryItemEntity ct: categoryItemList )
-        {
-            ItemEntity itemEntity = ct.getItemEntity();
-            ItemList itemList = new ItemList()
-                    .id(UUID.fromString(itemEntity.getUuid()))
-                    .itemName(itemEntity.getItemName())
-                    .itemType(itemEntity.getType().equals("0") ? ItemList.ItemTypeEnum.VEG : ItemList.ItemTypeEnum.NON_VEG)
-                    .price(itemEntity.getPrice());
-            itemsList.add(itemList);
-        }
+    /**
+     * Method takes input from customer, returns all categories
+     *
+     * @return ResponseEntity with list of Categories
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.GET, path = "/category", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CategoriesListResponse> getAllCategoriesOrderedByName() {
 
-        CategoryDetailsResponse categoryDetailsResponse = new CategoryDetailsResponse();
-        categoryDetailsResponse.itemList(itemsList);
-        categoryDetailsResponse.categoryName(categoryItemList.get(0).getCategoryEntity().getCategory_name());
-        categoryDetailsResponse.id(UUID.fromString(categoryId));
+        // Retrieve categories list from database
+        List<CategoryEntity> categoryEntityList = categoryService.getAllCategoriesOrderedByName();
 
-        return new ResponseEntity<CategoryDetailsResponse>(categoryDetailsResponse,HttpStatus.OK);
+        CategoriesListResponse categoriesListResponse = new CategoriesListResponse();
+
+        // Map retrieved Category Entity to Response Object List
+        categoryEntityList.forEach(category ->
+                categoriesListResponse.addCategoriesItem(
+                        new CategoryListResponse()
+                                .id(UUID.fromString(category.getUuid()))
+                                .categoryName(category.getCategoryName())
+                ));
+
+        return new ResponseEntity<CategoriesListResponse>(categoriesListResponse, HttpStatus.OK);
     }
+
 }
-
-

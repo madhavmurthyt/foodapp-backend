@@ -20,7 +20,10 @@ import javax.validation.constraints.*;
  */
 @ApiModel(description = "Restaurant details")
 @Validated
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.SpringCodegen", date = "2020-12-13T11:19:13.621+05:30")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.SpringCodegen", date = "2020-12-16T22:10:43.465+05:30")
+
+
+
 
 public class RestaurantDetailsResponse   {
   @JsonProperty("id")

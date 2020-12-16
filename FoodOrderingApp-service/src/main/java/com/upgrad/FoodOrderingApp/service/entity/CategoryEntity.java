@@ -1,45 +1,39 @@
 package com.upgrad.FoodOrderingApp.service.entity;
 
-import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import org.apache.commons.lang3.builder.*;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import java.io.Serializable;
+import java.util.List;
 
 @Entity
 @Table(name = "category")
-
-@NamedQueries(
-        {       @NamedQuery(name = "getAllCategoriesBasedCatId", query = "select cat from CategoryEntity cat where cat.id = :categoryId"),
-                @NamedQuery(name = "getCategoryByUUID", query = "select cat from CategoryEntity cat where cat.uuid = :uuid"),
-                @NamedQuery(name = "getCategory", query = "select ce from CategoryEntity ce "),
-                @NamedQuery(name = "getCategoryData", query = "select ce from CategoryEntity ce where ce.uuid = :uuid")
-        }
-)
-
-public class CategoryEntity implements Serializable {
-
+@NamedQueries({
+    @NamedQuery(name = "Category.fetchAllCategories", query = "SELECT c FROM CategoryEntity c order by c.categoryName"),
+    @NamedQuery(name = "Category.fetchCategoryItem", query = "SELECT ci FROM CategoryEntity ci WHERE ci.uuid=:categoryId")
+})
+public class CategoryEntity implements Serializable, Comparable<CategoryEntity> {
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Integer id;
+    @Column(name = "id")
+    @GeneratedValue(generator = "categoryIdGenerator")
+    @SequenceGenerator(name = "categoryIdGenerator", sequenceName = "category_id_seq", initialValue = 1, allocationSize = 1)
+    @ToStringExclude
+    @HashCodeExclude
+    private Integer id;
 
-    @Column(name = "UUID")
+    @Column(name = "uuid")
+    @NotNull
     @Size(max = 200)
-    public String uuid;
+    private String uuid;
 
-    @Column(name = "CATEGORY_NAME")
-    @Size(max = 255)
-    public String category_name;
+    @Column(name = "category_name")
+    @Size(max = 30)
+    private String categoryName;
+
+    @ManyToMany(mappedBy = "categories", fetch = FetchType.EAGER)
+    private List<ItemEntity> items;
 
     public Integer getId() {
         return id;
@@ -57,26 +51,39 @@ public class CategoryEntity implements Serializable {
         this.uuid = uuid;
     }
 
-    public String getCategory_name() {
-        return category_name;
+    public String getCategoryName() {
+        return categoryName;
     }
 
-    public void setCategory_name(String category_name) {
-        this.category_name = category_name;
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    public List<ItemEntity> getItems() {
+        return items;
+    }
+
+    public void setItems(List<ItemEntity> items) {
+        this.items = items;
     }
 
     @Override
     public boolean equals(Object obj) {
-        return new EqualsBuilder().append(this, obj).isEquals();
+        return EqualsBuilder.reflectionEquals(this, obj, Boolean.FALSE);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(this).hashCode();
+        return HashCodeBuilder.reflectionHashCode(this, Boolean.FALSE);
     }
 
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
+    }
+
+    @Override
+    public int compareTo(CategoryEntity categoryEntity) {
+        return 0;
     }
 }

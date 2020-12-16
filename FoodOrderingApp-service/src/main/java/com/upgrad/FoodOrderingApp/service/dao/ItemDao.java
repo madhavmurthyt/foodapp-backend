@@ -1,5 +1,5 @@
 package com.upgrad.FoodOrderingApp.service.dao;
-import org.springframework.stereotype.Repository;
+
 import com.upgrad.FoodOrderingApp.service.entity.ItemEntity;
 import org.springframework.stereotype.Repository;
 
@@ -9,28 +9,20 @@ import javax.persistence.PersistenceContext;
 
 @Repository
 public class ItemDao {
-
     @PersistenceContext
-    private EntityManager entityManager;
+    EntityManager entityManager;
 
-
-    public ItemEntity getItemById(String itemId) {
-
+    /**
+     * Method takes a item uuid and returns the matching ItemEntity
+     *
+     * @param uuid item uuid
+     * @return ItemEntity
+     */
+    public ItemEntity getItemById(String uuid) {
         try {
-            ItemEntity itemEntity = entityManager.createNamedQuery("itemById", ItemEntity.class)
-                    .setParameter("itemId", itemId)
-                    .getSingleResult();
-            return itemEntity;
-        } catch (NoResultException nre) {
-            return null;
-        }
-    }
-    //This method returns Item details based on the input id parameter
-
-
-    public ItemEntity getItemByUUID(String uuid) {
-        try {
-            return entityManager.createNamedQuery("itemByUUID", ItemEntity.class).setParameter("uuid", uuid).getSingleResult();
+            return entityManager.createNamedQuery("ItemEntity.getItemById", ItemEntity.class)
+                .setParameter("uuid", uuid)
+                .getSingleResult();
         } catch (NoResultException nre) {
             return null;
         }

@@ -1,12 +1,9 @@
 package com.upgrad.FoodOrderingApp.api.controller;
 
-import com.upgrad.FoodOrderingApp.api.model.LoginResponse;
 import com.upgrad.FoodOrderingApp.api.model.PaymentListResponse;
 import com.upgrad.FoodOrderingApp.api.model.PaymentResponse;
-import com.upgrad.FoodOrderingApp.api.model.SignupCustomerRequest;
-import com.upgrad.FoodOrderingApp.service.business.PaymentBusinessService;
+import com.upgrad.FoodOrderingApp.service.business.PaymentService;
 import com.upgrad.FoodOrderingApp.service.entity.PaymentEntity;
-import com.upgrad.FoodOrderingApp.service.exception.SignUpRestrictedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,21 +16,29 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
-@RestController
-@RequestMapping("/")
 @CrossOrigin
+@RestController
+@RequestMapping("/payment")
 public class PaymentController {
-    @Autowired
-    PaymentBusinessService paymentBusinessService;
-    @RequestMapping(method = RequestMethod.GET, path = "/payment", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<PaymentListResponse> payment(){
-        PaymentListResponse paymentListResponse = new PaymentListResponse();
-        List<PaymentEntity> payments =paymentBusinessService.getAllPayment();
-        for(PaymentEntity p : payments){
-            PaymentResponse payment= new PaymentResponse().id(UUID.fromString(p.getUuid())).paymentName(p.getPayment_name());
-            paymentListResponse.addPaymentMethodsItem(payment);
-        }
-        return new ResponseEntity<PaymentListResponse>(paymentListResponse,HttpStatus.OK);
 
+    @Autowired
+    PaymentService paymentService;
+
+    @CrossOrigin
+    @RequestMapping(path = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PaymentListResponse> getPaymentModes() {
+
+        // Fetch all payment modes as a list of Payment Entities from the database
+        List<PaymentEntity> paymentEntities = paymentService.getAllPaymentMethods();
+
+        // Map lis tof payment entities to Payment List Response object
+        PaymentListResponse response = new PaymentListResponse();
+        paymentEntities.forEach(paymentEntity -> response.addPaymentMethodsItem(new PaymentResponse().id(UUID.fromString(paymentEntity.getUuid())).paymentName(paymentEntity.getPaymentName())));
+
+        if (response.getPaymentMethods().isEmpty()) {
+            return new ResponseEntity<PaymentListResponse>(response, HttpStatus.NO_CONTENT);
+        } else {
+            return new ResponseEntity<PaymentListResponse>(response, HttpStatus.OK);
+        }
     }
 }

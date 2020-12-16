@@ -1,12 +1,13 @@
 package com.upgrad.FoodOrderingApp.api.controller;
 
 import com.upgrad.FoodOrderingApp.api.model.*;
-import com.upgrad.FoodOrderingApp.service.business.AddressBusinessService;
-import com.upgrad.FoodOrderingApp.service.business.CustomerBusinessService;
-import com.upgrad.FoodOrderingApp.service.business.SignupBusinessService;
-import com.upgrad.FoodOrderingApp.service.business.StateBusinessService;
-import com.upgrad.FoodOrderingApp.service.dao.CustomerDao;
-import com.upgrad.FoodOrderingApp.service.entity.*;
+import com.upgrad.FoodOrderingApp.service.business.AddressService;
+import com.upgrad.FoodOrderingApp.service.business.CustomerService;
+import com.upgrad.FoodOrderingApp.service.common.AppUtils;
+import com.upgrad.FoodOrderingApp.service.common.UnexpectedException;
+import com.upgrad.FoodOrderingApp.service.entity.AddressEntity;
+import com.upgrad.FoodOrderingApp.service.entity.CustomerEntity;
+import com.upgrad.FoodOrderingApp.service.entity.StateEntity;
 import com.upgrad.FoodOrderingApp.service.exception.AddressNotFoundException;
 import com.upgrad.FoodOrderingApp.service.exception.AuthorizationFailedException;
 import com.upgrad.FoodOrderingApp.service.exception.SaveAddressException;
@@ -16,107 +17,182 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
-
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/")
-@CrossOrigin
 public class AddressController {
 
     @Autowired
-    StateBusinessService stateBusinessService;
+    private CustomerService customerService;
 
     @Autowired
-    AddressBusinessService addressBusinessService;
+    private AddressService addressService;
 
-    @Autowired
-    CustomerBusinessService customerBusinessService;
+    /**
+     * Method takes authorization from customer, returns all address mapped to his profile
+     *
+     * @param authorization Customer's access token as request header
+     * @return ResponseEntity with list of Addresses
+     * @throws AuthorizationFailedException on invalid customer access-token
+     * @throws UnexpectedException          on any other errors
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.GET, path = "/address/customer", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AddressListResponse> getAllAddresses(@RequestHeader("authorization") final String authorization)
+        throws AuthorizationFailedException {
 
-    @RequestMapping(method = RequestMethod.POST, path = "/address", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<SaveAddressResponse> saveAddress(final SaveAddressRequest saveAddressRequest, @RequestHeader("authorization") final String authorization)
-        throws  SaveAddressException,AuthorizationFailedException, AddressNotFoundException {
+        // Get Bearer Authorization Token
+        final String accessToken = AppUtils.getBearerAuthToken(authorization);
 
-        String [] bearerToken = authorization.split("Bearer ");
+        // Get customer details on successful authentication of accessToken
+        final CustomerEntity customerEntity = customerService.getCustomer(accessToken);
 
-        AddressEntity addressEntity = new AddressEntity();
+        // Retrieve addresses from database
+        List<AddressEntity> sortedAddress = addressService.getAllAddress(customerEntity);
 
-        addressEntity.setFlat_buil_number(saveAddressRequest.getFlatBuildingName());
-        addressEntity.setCity(saveAddressRequest.getCity());
-        addressEntity.setLocality(saveAddressRequest.getLocality());
-        addressEntity.setPincode(saveAddressRequest.getPincode());
-        addressEntity.setUuid(UUID.randomUUID().toString());
-        addressEntity.setActive(1);
+        List<AddressList> addressesList = new ArrayList<>();
 
-        final AddressEntity createdAddress = addressBusinessService.saveAddress(addressEntity, bearerToken[1], saveAddressRequest.getStateUuid());
-        final CustomerAuthTokenEntity customerAuthTokenEntity = customerBusinessService.getCustomer(bearerToken[1]);
+        // Map retrieved Address Entity to Response Object List
+        sortedAddress.forEach(address -> {
+            AddressListState addressListState = new AddressListState();
+            addressListState.setId(UUID.fromString(address.getState().getUuid()));
+            addressListState.setStateName(address.getState().getStateName());
 
-        final CustomerAddressEntity customerAddressEntity = new CustomerAddressEntity();
-        customerAddressEntity.setAddressEntity(createdAddress);
-        customerAddressEntity.setCustomerEntity(customerAuthTokenEntity.getCustomer());
-        addressBusinessService.saveCustomerAddress(customerAddressEntity);
-
-        final SaveAddressResponse saveAddressResponse = new SaveAddressResponse().id(createdAddress.getUuid()).status("ADDRESS SUCCESSFULLY REGISTERED");
-
-        return new ResponseEntity<SaveAddressResponse>(saveAddressResponse, HttpStatus.CREATED);
-    }
-
-    @RequestMapping(method = RequestMethod.GET, path = "/states", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<List<StatesListResponse>> getAllStates(){
-        List<StateEntity> SB = stateBusinessService.getAllStates();
-
-        List<StatesListResponse> states = new ArrayList<>();
-
-        for(StateEntity stateEntity : SB) {
-            UUID stateUUID = UUID.fromString(stateEntity.getUuid());
-            StatesList statesList = new StatesList().id(stateUUID).stateName(stateEntity.getState_name());
-            StatesListResponse statesListResponse = new StatesListResponse().addStatesItem(statesList);
-            states.add(statesListResponse);
-        }
-
-        return new ResponseEntity<List<StatesListResponse>>(states, HttpStatus.OK);
-
-    }
-
-    @RequestMapping(method = RequestMethod.GET, path = "/address/customer", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<List<AddressListResponse>> getAllAddressByCustomer (@RequestHeader("authorization") final String authorization)
-            throws AuthorizationFailedException {
-
-        String [] bearerToken = authorization.split("Bearer ");
-
-        List<CustomerAddressEntity> AE = customerBusinessService.getAddressByCustomer(bearerToken[1]);
-
-        List<AddressListResponse> address = new ArrayList<>();
-
-        for(CustomerAddressEntity ce : AE){
-            AddressEntity a = ce.getAddressEntity();
-            AddressListState addressListState = new AddressListState().id(UUID.fromString(a.getStateEntity().getUuid())).stateName(a.getStateEntity().getState_name());
             AddressList addressList = new AddressList()
-                    .id(UUID.fromString(a.getUuid()))
-                    .flatBuildingName(a.getFlat_buil_number())
-                    .locality(a.getLocality())
-                    .city(a.getCity())
-                    .pincode(a.getPincode())
-                    .state(addressListState);
-            AddressListResponse alr = new AddressListResponse().addAddressesItem(addressList);
-            address.add(alr);
+                .id(UUID.fromString(address.getUuid()))
+                .flatBuildingName(address.getFlatBuilNo())
+                .city(address.getCity())
+                .locality(address.getLocality())
+                .pincode(address.getPincode())
+                .state(addressListState);
+            addressesList.add(addressList);
+        });
+
+        AddressListResponse addressListResponse = new AddressListResponse().addresses(addressesList);
+        return new ResponseEntity<AddressListResponse>(addressListResponse, HttpStatus.OK);
+    }
+
+    /**
+     * Method takes address id from customer, delete address mapped to his profile
+     *
+     * @param authorization Customer's access token as request header
+     * @param addressId     Address id to be deleted
+     * @return ResponseEntity with id of address deleted
+     * @throws AddressNotFoundException     on invalid address id
+     * @throws AuthorizationFailedException on invalid customer access-token
+     * @throws UnexpectedException          on any other errors
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.DELETE, path = "/address/{address_id}",
+        produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<DeleteAddressResponse> deleteAddress(@RequestHeader("authorization") final String authorization,
+                                                               @PathVariable(value = "address_id") final String addressId)
+        throws AuthorizationFailedException, AddressNotFoundException {
+        // Get Bearer Authorization Token
+        final String accessToken = AppUtils.getBearerAuthToken(authorization);
+
+        // Get customer details on successful authentication of accessToken
+        final CustomerEntity customerEntity = customerService.getCustomer(accessToken);
+
+        // Get address entity of address to be deleted
+        AddressEntity address = addressService.getAddressByUUID(addressId, customerEntity);
+
+        AddressEntity deletedAddress;
+
+        DeleteAddressResponse deleteAddressResponse = new DeleteAddressResponse();
+
+
+        if (address.getOrders().isEmpty()) { // If address have no history of orders, delete the address from database
+            deletedAddress = addressService.deleteAddress(address);
+        } else { // If address have history of orders, soft delete (deactivate) the address from database
+            address.setActive(0);
+            deletedAddress = addressService.deactivateAddress(address);
         }
 
-        return new ResponseEntity<List<AddressListResponse>>(address, HttpStatus.OK);
+        // Map deleted Address status & id to Response Object
+        deleteAddressResponse.status("ADDRESS DELETED SUCCESSFULLY");
+        deleteAddressResponse.id(UUID.fromString(deletedAddress.getUuid()));
+        return new ResponseEntity<DeleteAddressResponse>(deleteAddressResponse, HttpStatus.OK);
     }
 
-    @RequestMapping(method = RequestMethod.DELETE, path="address/{addressId}",produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
-    public ResponseEntity<DeleteAddressResponse> deleteAddress(@PathVariable("addressId") final String addressID, @RequestHeader("authorization") final String authorization)
-        throws AuthorizationFailedException, AddressNotFoundException {
+    /**
+     * Method takes no input from customer, returns all states
+     *
+     * @return ResponseEntity with list of States
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.GET, path = "/states", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<StatesListResponse> getAllStates() {
 
-        String [] bearerToken = authorization.split("Bearer ");
+        // Retrieve all states from database
+        List<StateEntity> states = addressService.getAllStates();
 
-        final String deleteAddress = addressBusinessService.deleteAddress(addressID,bearerToken[1]);
+        // Map retrieved State Entity to Response Object List
+        if (!states.isEmpty()) {
+            List<StatesList> statesList = new LinkedList<>();
+            states.forEach(state -> {
+                StatesList stateList = new StatesList();
+                stateList.setId(UUID.fromString(state.getUuid()));
+                stateList.setStateName(state.getStateName());
 
-        DeleteAddressResponse deleteAddressResponse = new DeleteAddressResponse().id(UUID.fromString(deleteAddress)).status("Address Deleted");
-
-        return  new ResponseEntity<DeleteAddressResponse>(deleteAddressResponse, HttpStatus.OK);
-
+                statesList.add(stateList);
+            });
+            StatesListResponse statesListResponse = new StatesListResponse().states(statesList);
+            return new ResponseEntity<StatesListResponse>(statesListResponse, HttpStatus.OK);
+        } else
+            return new ResponseEntity<StatesListResponse>(new StatesListResponse(), HttpStatus.OK);
     }
+
+
+    /**
+     * Method takes Customer's SaveAddress request, stores customer address in the system
+     *
+     * @param saveAddressRequest Customer's saveAddress request having  details like flat, locality, city etc.
+     * @return ResponseEntity with Address Id
+     * @throws SaveAddressException         on invalid saveAddress request
+     * @throws AddressNotFoundException     on invalid state id
+     * @throws AuthorizationFailedException on invalid customer access-token
+     * @throws UnexpectedException          on any other errors
+     */
+    @CrossOrigin
+    @RequestMapping(method = RequestMethod.POST, path = "/address", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<SaveAddressResponse> saveAddress(@RequestHeader("authorization") final String authorization,
+                                                           @RequestBody(required = false) final SaveAddressRequest saveAddressRequest)
+            throws AuthorizationFailedException, AddressNotFoundException, SaveAddressException {
+
+        // Get Bearer Authorization Token
+        final String accessToken = AppUtils.getBearerAuthToken(authorization);
+
+        // Get customer details on successful authentication of accessToken
+        final CustomerEntity customerEntity = customerService.getCustomer(accessToken);
+
+        // Generate Address entity for insert
+        AddressEntity address = new AddressEntity();
+        address.setFlatBuilNo(saveAddressRequest.getFlatBuildingName());
+        address.setLocality(saveAddressRequest.getLocality());
+        address.setCity(saveAddressRequest.getCity());
+        address.setPincode(saveAddressRequest.getPincode());
+        address.setUuid(UUID.randomUUID().toString());
+        address.setActive(1);
+        StateEntity state = addressService.getStateByUUID(saveAddressRequest.getStateUuid());
+        address.setCustomers(customerEntity);
+
+        // Store Address entity in the database
+        AddressEntity savedAddress = addressService.saveAddress(address, state);
+
+        // Map persisted Address Entity to Response Object
+        SaveAddressResponse addressResponse = new SaveAddressResponse()
+                .id(savedAddress.getUuid())
+                .status("ADDRESS SUCCESSFULLY REGISTERED");
+
+        return new ResponseEntity<SaveAddressResponse>(addressResponse, HttpStatus.CREATED);
+    }
+
 
 }
+
+

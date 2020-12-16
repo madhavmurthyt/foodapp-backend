@@ -1,55 +1,62 @@
 package com.upgrad.FoodOrderingApp.service.entity;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import org.apache.commons.lang3.builder.EqualsExclude;
+import org.apache.commons.lang3.builder.HashCodeExclude;
+import org.apache.commons.lang3.builder.ToStringExclude;
+
+import javax.persistence.*;
+import java.io.Serializable;
 
 @Entity
 @Table(name = "restaurant_category")
-@NamedQueries(
-        {       @NamedQuery(name = "getAllRestaurantsCategories", query = "select resCat from RestaurantCategoryEntity resCat where resCat.restaurantId = :restaurantId"),
-                @NamedQuery(name = "getAllRestaurantsByCategory", query = "select resCat from RestaurantCategoryEntity resCat where resCat.categoryId = :categoryId")
-        }
-)
-public class RestaurantCategoryEntity {
-
+@NamedQueries({
+    @NamedQuery(name = "RestaurantCategoryEntity.getCategoryByRestaurant", query = "SELECT rc.categoryEntity from RestaurantCategoryEntity rc WHERE rc.restaurantEntity=:restaurant"),
+    @NamedQuery(name = "RestaurantCategoryEntity.getRestaurantByCategory", query = "SELECT rc.restaurantEntity from RestaurantCategoryEntity rc WHERE rc.categoryEntity=:category")
+})
+public class RestaurantCategoryEntity implements Serializable {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @GeneratedValue(generator = "restaurantCategoryIdGenerator")
+    @SequenceGenerator(name = "restaurantCategoryIdGenerator", sequenceName = "restaurant_category_id_seq", initialValue = 1, allocationSize = 1)
+    @ToStringExclude
+    @HashCodeExclude
+    private int id;
 
-    @Column(name = "restaurant_id")
-    private Integer restaurantId;
+    @ToStringExclude
+    @HashCodeExclude
+    @EqualsExclude
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "restaurant_id", referencedColumnName = "id")
+    private RestaurantEntity restaurantEntity;
 
-    @Column(name = "category_id")
-    private Integer categoryId;
+    @ToStringExclude
+    @HashCodeExclude
+    @EqualsExclude
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "category_id", referencedColumnName = "id")
+    private CategoryEntity categoryEntity;
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public Integer getRestaurantId() {
-        return restaurantId;
+    public RestaurantEntity getRestaurantEntity() {
+        return restaurantEntity;
     }
 
-    public void setRestaurantId(Integer restaurantId) {
-        this.restaurantId = restaurantId;
+    public void setRestaurantEntity(RestaurantEntity restaurantEntity) {
+        this.restaurantEntity = restaurantEntity;
     }
 
-    public Integer getCategoryId() {
-        return categoryId;
+    public CategoryEntity getCategoryEntity() {
+        return categoryEntity;
     }
 
-    public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
+    public void setCategoryEntity(CategoryEntity categoryEntity) {
+        this.categoryEntity = categoryEntity;
     }
 }
