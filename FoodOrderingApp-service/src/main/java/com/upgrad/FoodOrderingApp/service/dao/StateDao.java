@@ -2,34 +2,37 @@ package com.upgrad.FoodOrderingApp.service.dao;
 
 import com.upgrad.FoodOrderingApp.service.entity.StateEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import java.util.ArrayList;
 import java.util.List;
 
 @Repository
 public class StateDao {
 
     @PersistenceContext
-    EntityManager entityManager;
+    private EntityManager entityManager;
 
-    public List<StateEntity> getAllStates() {
+    @Transactional(propagation = Propagation.REQUIRED)
+    public StateEntity findStateByUUID(final String uuid) {
         try {
-            Query query = entityManager.createQuery("select se from StateEntity se order by se.state_name");
-            return new ArrayList<StateEntity>(query.getResultList());
+            return entityManager.createNamedQuery("fetchStateByUUID", StateEntity.class)
+                .setParameter("uuid", uuid).getSingleResult();
         } catch (NoResultException nre) {
             return null;
         }
     }
 
-    public StateEntity getStateByUUID(final String stateUUID){
+    public List<StateEntity> getAllStates() {
         try {
-            return entityManager.createNamedQuery("getStateByUUID",StateEntity.class).setParameter("uuid", stateUUID).getSingleResult();
-        }catch (NoResultException nre){
+            List<StateEntity> states = entityManager.createNamedQuery("fetchAllStates", StateEntity.class).getResultList();
+            return states;
+        } catch (NoResultException nre) {
             return null;
         }
     }
+
 }

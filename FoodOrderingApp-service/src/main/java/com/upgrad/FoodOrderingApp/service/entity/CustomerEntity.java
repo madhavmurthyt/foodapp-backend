@@ -6,53 +6,63 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
+import java.util.List;
 
 @Entity
-@Table(name = "Customer")
+@Table(name = "customer")
 @NamedQueries({
-        @NamedQuery(name = "getAllCustomers", query = "select ce from CustomerEntity ce"),
-        @NamedQuery(name = "getCustomerByUUID", query = "select ce from CustomerEntity ce where ce.uuid = :uuid"),
-        @NamedQuery(name = "getCustomerByContactNo", query = "select ce from CustomerEntity ce where ce.contact_Number = :contact_Number")
+    @NamedQuery(name = "Customer.ByContact", query = "SELECT C FROM CustomerEntity C WHERE C.contactNumber = :contactNumber")
 })
 public class CustomerEntity implements Serializable {
 
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(generator = "customerIdGenerator")
+    @SequenceGenerator(name = "customerIdGenerator", sequenceName = "customer_id_seq", initialValue = 1, allocationSize = 1)
+    @Column(name = "id")
+    @ToStringExclude
+    @HashCodeExclude
     private Integer id;
 
-    @Column(name = "UUID")
+    @Column(name = "uuid")
     @Size(max = 200)
+    @NotNull
     private String uuid;
 
-    @Column(name = "FIRSTNAME")
+    @Column(name = "firstname")
     @NotNull
     @Size(max = 30)
-    private String firstname;
+    private String firstName;
 
-    @Column(name = "LASTNAME")
+    @Column(name = "lastname")
     @Size(max = 30)
-    private String lastname;
+    private String lastName;
 
     @Column(name = "email")
-    @NotNull
     @Size(max = 50)
     private String email;
 
-    @Column(name = "CONTACT_NUMBER")
-    @NotNull
+    @Column(name = "contact_number")
     @Size(max = 30)
-    private String contact_Number;
-
-    @Column(name = "PASSWORD")
     @NotNull
-    @Size(max = 255)
+    private String contactNumber;
 
+    @Column(name = "password")
+    @Size(max = 255)
+    @NotNull
+    @ToStringExclude
+    @HashCodeExclude
     private String password;
 
     @Column(name = "salt")
     @Size(max = 255)
+    @NotNull
+    @ToStringExclude
+    @HashCodeExclude
     private String salt;
+
+    @OneToMany(mappedBy = "customer",
+        fetch = FetchType.EAGER)
+    private List<AddressEntity> addresses;
 
     public Integer getId() {
         return id;
@@ -70,20 +80,20 @@ public class CustomerEntity implements Serializable {
         this.uuid = uuid;
     }
 
-    public String getFirstname() {
-        return firstname;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setFirstname(String firstname) {
-        this.firstname = firstname;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getLastname() {
-        return lastname;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setLastname(String lastname) {
-        this.lastname = lastname;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getEmail() {
@@ -94,16 +104,16 @@ public class CustomerEntity implements Serializable {
         this.email = email;
     }
 
-    public String getContact_Number() {
-        return contact_Number;
+    public String getContactNumber() {
+        return contactNumber;
     }
 
-    public void setContact_Number(String contact_Number) {
-        this.contact_Number = contact_Number;
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 
     public String getPassword() {
-        return this.password;
+        return password;
     }
 
     public void setPassword(String password) {
@@ -118,19 +128,26 @@ public class CustomerEntity implements Serializable {
         this.salt = salt;
     }
 
+    public List<AddressEntity> getAddresses() {
+        return addresses;
+    }
+
+    public void setAddresses(List<AddressEntity> addresses) {
+        this.addresses = addresses;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        return new EqualsBuilder().append(this, obj).isEquals();
+        return EqualsBuilder.reflectionEquals(this, obj, Boolean.FALSE);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(this).hashCode();
+        return HashCodeBuilder.reflectionHashCode(this, Boolean.FALSE);
     }
 
     @Override
     public String toString() {
         return ToStringBuilder.reflectionToString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
-
 }

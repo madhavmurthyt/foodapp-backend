@@ -1,36 +1,52 @@
 package com.upgrad.FoodOrderingApp.service.entity;
 
-
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.*;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 
 @Entity
-@Table(name="PAYMENT")
-@NamedQueries(
-        {
-                @NamedQuery(name = "getPayment", query = "select pe from PaymentEntity pe ")
-        }
-)
+@Table(name = "payment")
+@NamedQueries({
+    @NamedQuery(name = "PaymentModes.All", query = "SELECT P FROM PaymentEntity P"),
+    @NamedQuery(name = "PaymentModes.getById", query = "SELECT P FROM PaymentEntity P Where P.uuid=:uuid")
+})
 public class PaymentEntity implements Serializable {
-
     @Id
-    @Column(name = "ID")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @Column(name = "id")
+    @GeneratedValue(generator = "paymentIdGenerator")
+    @SequenceGenerator(name = "paymentIdGenerator", sequenceName = "payment_id_seq", initialValue = 1, allocationSize = 1)
+    @ToStringExclude
+    @HashCodeExclude
+    private Integer id;
 
-    @Column(name = "UUID")
+    @Column(name = "uuid")
+    @NotNull
     @Size(max = 200)
     private String uuid;
 
-    @Column(name = "PAYMENT_NAME")
+    @Column(name = "payment_name")
     @Size(max = 255)
-    private String payment_name;
+    private String paymentName;
+
+    public PaymentEntity() {
+
+    }
+
+    public PaymentEntity(String uuid, String paymentName) {
+        this.uuid = uuid;
+        this.paymentName = paymentName;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
     public String getUuid() {
         return uuid;
@@ -40,30 +56,22 @@ public class PaymentEntity implements Serializable {
         this.uuid = uuid;
     }
 
-    public String getPayment_name() {
-        return payment_name;
+    public String getPaymentName() {
+        return paymentName;
     }
 
-    public void setPayment_name(String payment_name) {
-        this.payment_name = payment_name;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public void setPaymentName(String paymentName) {
+        this.paymentName = paymentName;
     }
 
     @Override
     public boolean equals(Object obj) {
-        return new EqualsBuilder().append(this, obj).isEquals();
+        return EqualsBuilder.reflectionEquals(this, obj, Boolean.FALSE);
     }
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(this).hashCode();
+        return HashCodeBuilder.reflectionHashCode(this, Boolean.FALSE);
     }
 
     @Override
