@@ -244,7 +244,7 @@ public class CustomerController {
 
         // Map persisted Customer Entity to Response Object
         final SignupCustomerResponse response = new SignupCustomerResponse();
-        response.id(customerEntity.getUuid()).status("CUSTOMER CREATED SUCCESSFULLY");
+        response.id(customerEntity.getUuid()).status("CUSTOMER SUCCESSFULLY REGISTERED");
         return new ResponseEntity<SignupCustomerResponse>(response, HttpStatus.CREATED);
     }
 
