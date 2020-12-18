@@ -25,7 +25,11 @@ public class OrderDao {
     public List<OrderEntity> getOrdersForCustomer(final String customerId) {
         return entityManager.createNamedQuery("Orders.ByCustomer", OrderEntity.class).setParameter("customerId", customerId).getResultList();
     }
-
+    
+	/**
+	*
+	*Methods saves all the order details
+	**/
     public OrderEntity saveOrder(OrderEntity orderEntity) {
         entityManager.persist(orderEntity);
         return orderEntity;
@@ -36,13 +40,16 @@ public class OrderDao {
         entityManager.persist(orderedItem);
         return orderedItem;
     }
-
+    /**
+	*List all the Order based on Restaurant
+	*
+	**/
     public List<OrderEntity> getOrdersByRestaurant(RestaurantEntity restaurant) {
         try {
             return entityManager.createNamedQuery("fetchOrdersByRestaurant", OrderEntity.class)
                 .setParameter("restaurant", restaurant).getResultList();
         } catch (NoResultException nre) {
-            System.out.printf("Ashik0 ");
+            System.out.printf("GetOrderRestaurant");
             return null;
         }
     }
