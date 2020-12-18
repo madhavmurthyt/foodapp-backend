@@ -133,7 +133,7 @@ public class RestaurantController {
     }
 
     /**
-     * Method takes string as the input which if forms a part of any such restaurant name,the restaurant is included in the return list of restaurants
+     * This Method takes string as the input which if forms a part of any such restaurant name,the restaurant is included in the return list of restaurants
      *
      * @return ResponseEntity with list of all of the Restaurants
      * @throws RestaurantNotFoundException if the name is empty
@@ -244,7 +244,7 @@ public class RestaurantController {
     }
 
     /**
-     * Method takes category as the input which if served by a restaurant,the restaurant is included in the return list of restaurants
+     * This Method takes category as the input which if served by a restaurant,the restaurant is included in the return list of restaurants
      *
      * @return ResponseEntity with list of all of the Restaurants
      * @throws CategoryNotFoundException if the name is empty
