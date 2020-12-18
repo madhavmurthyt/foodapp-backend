@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
+//Allowsto specify a flexible way what kind of cross domain requests are authorized
 @CrossOrigin
 @RestController
 @RequestMapping("/order")
@@ -117,7 +117,16 @@ public class OrderController {
             return new ResponseEntity<CustomerOrderResponse>(response, HttpStatus.OK);
         }
     }
-
+   /**
+   *Method saves the order details
+   *@return ResponseEntity of Order
+   *@throws AuthorizationFailedException on invalid/incorrect access token
+   *@throws AddressNotFoundException on incorrect/invalid/non-existent Address
+   *@throws RestaurantNotFoundException on incorrect/invalid/non-existent Restaurant 
+   *@throws CouponNotFoundException on incorrect/invalid/non-existent coupon name
+   *@throws PaymentMethodNotFoundException on incorrect/invalid PaymentMethod
+   *@throws ItemNotFoundException on incorrect/invalid item name
+   **/
     @CrossOrigin
     @RequestMapping(method = RequestMethod.POST, path = "", consumes = MediaType.APPLICATION_JSON_UTF8_VALUE,
         produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
